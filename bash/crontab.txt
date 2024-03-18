@@ -1,0 +1,22 @@
+## crontab for user
+
+crontab -e
+...
+# m     h     dom   mon   dow    command
+
+  *     *     *     *     *      echo "Privet!" >> /home/user/mylogs.log
+  50    14    *     *     *      echo "HI" >> /home/user/mylogs.log
+  30    6,18  *     *     *
+  */2   *     *     *     *      echo "Hello" >> /home/user/mylogs.log
+  */5   *     *     *     *      /home/user/myscript.sh
+  
+...
+# list
+crontab -l
+
+# it's save into /var/spool/cron/crontabs/name-user
+
+
+## crontab for system (root chrontab)
+sudo nano /etc/crontab
+

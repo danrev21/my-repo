@@ -1,0 +1,19 @@
+
+ls /sys/class/net/
+
+sudo vi /etc/network/interfaces
+
+#look interfaces:
+ifconfig
+
+ip link show
+ip -br link show
+
+nmcli device status
+
+netstat -i
+
+cat /proc/net/dev
+
+networkctl
+

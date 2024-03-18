@@ -1,0 +1,263 @@
+=========================================================
+
+### script to install bamboo:
+sudo su
+apt update
+
+# install postgre:
+sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+sudo apt-get update
+sudo apt-get -y install postgresql-16
+
+# install java (jdk, not jre!):
+apt install -y openjdk-17-jdk
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+export PATH=$PATH:$JAVA_HOME/bin
+
+# Create a dedicated user to run Bamboo:
+/usr/sbin/useradd --create-home --home-dir /usr/local/bamboo --shell /bin/bash bamboo
+
+# Download Bamboo:
+cd /opt
+mkdir bamboo && cd bamboo
+wget -c https://www.atlassian.com/software/bamboo/downloads/binary/atlassian-bamboo-9.6.0.tar.gz
+tar -zxf atlassian-bamboo-9.6.0.tar.gz
+
+# Create the home directory:
+mkdir bamboo-home
+echo "bamboo.home=/opt/bamboo/bamboo-home/" >> /opt/bamboo/atlassian-bamboo-9.6.0/atlassian-bamboo/WEB-INF/classes/bamboo-init.properties
+chown -R bamboo: /opt/bamboo
+
+# copy-paste above in terminal ^
+
+-----------------------------------------------------
+
+# Creating a Bamboo database:
+sudo -s -H -u postgres
+/usr/lib/postgresql/16/bin/createuser -S -d -r -P -E bamboouser
+/usr/lib/postgresql/16/bin/createdb -O bamboouser bamboo
+exit
+
+# if you need keygen, take it from https://github.com/haxqer/confluence/releases/
+cd /opt/bamboo/
+wget -c https://github.com/haxqer/confluence/releases/download/v1.3.3/atlassian-agent.jar
+vim /opt/bamboo/atlassian-bamboo-9.6.0/bin/setenv.sh
+# add this line:
+export JAVA_OPTS="-javaagent:/opt/bamboo/atlassian-agent.jar ${JAVA_OPTS}"
+
+# Start Bamboo:
+bash /opt/bamboo/atlassian-bamboo-9.6.0/bin/start-bamboo.sh
+
+# keygen license:
+# to get help:
+java -jar atlassian-agent.jar -h
+
+ID: B1LR-ADDJ-J18I-M1QO
+Product: bamboo
+License type: Bamboo (Data Center)
+License email: your_email
+Organizaion: my-org
+
+java -jar atlassian-agent-jar-with-dependencies.jar -d -m your_email -o my-org -p bamboo -s B1LR-ADDJ-J18I-M1QO
+
+----------------------------------------------------
+# Running Bamboo as a Linux service:
+vim /etc/systemd/system/bamboo.service
+[Unit]
+Description=Atlassian Bamboo
+After=syslog.target network.target
+
+[Service]
+Type=forking
+User=bamboo
+ExecStart=/opt/bamboo/atlassian-bamboo-9.6.0/bin/start-bamboo.sh
+ExecStop=/opt/bamboo/atlassian-bamboo-9.6.0/bin/stop-bamboo.sh
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
+
+systemctl enable bamboo.service
+bash /opt/bamboo/atlassian-bamboo-9.6.0/bin/stop-bamboo.sh
+# restart system and check:
+ps aux | grep bamboo
+if [ -f /etc/systemd/system/*.wants/bamboo.service ]; then echo "On"; else echo "Off"; fi
+top
+ll /etc/systemd/system/multi-user.target.wants/
+
+====================================================
+
+# setup remote agent:
+# install java (jdk, not jre!):
+apt install -y openjdk-17-jdk
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+export PATH=$PATH:$JAVA_HOME/bin
+
+wget -c http:/192.168.0.1/atlassian-bamboo-agent-installer-9.6.0.jar
+
+# to get help:
+java -jar atlassian-bamboo-agent-installer-9.6.0.jar
+Bamboo URL missing.
+
+Usage: java [<properties>] -jar bamboo-agent.jar <bamboo-url> [<commandString>] [-t <securityToken>]
+    where commandString is one of the following:
+        console     Run the Bamboo agent in the foreground (default)
+        start       Start the Bamboo agent in the background
+        stop        Stop the background Bamboo agent
+        status      Get the status of the Bamboo agent
+        install     Install the Bamboo agent (overwrite any changes to wrapper.conf)
+    recognized properties:
+        -Dbamboo.home=<bamboo-agent-home>
+        -Dbamboo.agent.ignoreServerCertName=(true|false)   Default value is false
+        -Dbamboo.allow.empty.artifacts=(true|false)        Default value is false
+        -Dbamboo.agent.init.memory=(mb)                    Default value is 256
+        -Dbamboo.agent.max.memory=(mb)                     Default value is 512
+    Example bamboo-url:         http://bamboo.example.com/agentServer
+    Default bamboo-agent-home:  /root/bamboo-agent-home
+
+Security token (if needed) can be obtained from your Bamboo instance under the following address:
+    <bamboo-base-url>/admin/agent/addRemoteAgent.action
+    
+# to run agent:    
+java -jar atlassian-bamboo-agent-installer-9.6.0.jar http://192.168.0.101:8085/agentServer/
+
+===================================================
+===================================================
+# the same установка с подробностями:
+# Supported platforms  !!!
+https://confluence.atlassian.com/bamboo/supported-platforms-289276764.html
+
+# Lets kick off:
+apt update
+cd /opt
+
+# install postgre https://www.postgresql.org/download/:
+sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+sudo apt-get update
+sudo apt-get -y install postgresql-16
+
+systemctl status postgresql
+
+# Configuring PostgreSQL https://confluence.atlassian.com/bamboo0604/postgresql-947177122.html
+# Creating a Bamboo database:
+sudo -s -H -u postgres
+find / -name postgresql
+/usr/lib/postgresql/16/bin/createuser -S -d -r -P -E bamboouser
+/usr/lib/postgresql/16/bin/createdb -O bamboouser bamboo
+exit
+
+# install java (jdk, not jre!):
+apt-cache search openjdk
+apt install openjdk-17-jdk
+java -version
+echo $JAVA_HOME
+ll /etc/alternatives/java --> /usr/lib/jvm/java-17-openjdk-amd64
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+export PATH=$PATH:$JAVA_HOME/bin
+echo $JAVA_HOME
+echo $PATH
+# another way:
+vim /etc/environment
+PATH="...:/usr/lib/jvm/java-17-openjdk-amd64/bin"
+JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+source /etc/environment
+
+# Create a dedicated user to run Bamboo:
+sudo /usr/sbin/useradd --create-home --home-dir /usr/local/bamboo --shell /bin/bash bamboo
+
+# Download Bamboo:
+mkdir bamboo && cd bamboo
+https://www.atlassian.com/software/bamboo/download
+wget -c https://www.atlassian.com/software/bamboo/downloads/binary/atlassian-bamboo-9.6.0.tar.gz
+tar -zxf atlassian-bamboo-9.6.0.tar.gz
+
+# Create the home directory:
+mkdir bamboo-home
+vim atlassian-bamboo-9.6.0/atlassian-bamboo/WEB-INF/classes/bamboo-init.properties
+bamboo.home=/opt/bamboo/bamboo-home   <-- uncomment and edit
+
+# Start Bamboo:
+./atlassian-bamboo-9.6.0/bin/start-bamboo.sh
+
+
+# Logs:
+cat /opt/bamboo/atlassian-bamboo-9.6.0/logs/catalina.out
+
+# Check:
+ss -tlp
+ss -tlpn
+/usr/lib/jvm/java-17-openjdk-amd64/bin/jps -v
+
+http://localhost:8085
+
+--------------------------------------------------------------
+
+# to change used memory jvm: 
+vim atlassian-bamboo-9.6.0/bin/setenv.sh
+: ${JVM_MINIMUM_MEMORY:=1024m}
+: ${JVM_MAXIMUM_MEMORY:=1024m}
+
+==============================================================
+==============================================================
+BAMBOO KEYGEN
+
+=================================================================
+1. https://github.com/haxqer/confluence/releases/
+
+wget -c https://github.com/haxqer/confluence/releases/download/v1.3.3/atlassian-agent.jar
+vim /opt/bamboo/atlassian-bamboo-9.6.0/bin/setenv.sh
+# add this line:
+export JAVA_OPTS="-javaagent:/opt/bamboo/atlassian-agent.jar ${JAVA_OPTS}"
+
+# Start Bamboo:
+bash /opt/bamboo/atlassian-bamboo-9.6.0/bin/start-bamboo.sh
+
+# keygen license:
+# to get help:
+java -jar atlassian-agent.jar -h
+
+ID: B1LR-ADDJ-J18I-M1QO
+Product: bamboo
+License type: Bamboo (Data Center)
+License email: your_email
+Organizaion: my-org
+
+java -jar atlassian-agent-jar-with-dependencies.jar -d -m dan.rev2021@gmail.com -o my-org -p bamboo -s B1LR-ADDJ-J18I-M1QO
+
+=================================================================
+
+2. https://github.com/ipwnosx/Atlassian-Agent/blob/main/README.md
+
+# Compile jar:
+apt update
+apt install -y git
+apt install -y maven 
+cd /opt && mkdir mvn && cd mvn
+git init
+git clone https://github.com/hgqapp/atlassian-agent.git
+cd atlassian-agent/
+mvn package
+
+java -jar atlassian-agent-jar-with-dependencies.jar
+vim /opt/bamboo/atlassian-bamboo-9.6.0/bin/setenv.sh 
+# add this line:
+export JAVA_OPTS="-javaagent:/path/to/atlassian-agent.jar ${JAVA_OPTS}"
+
+# Start Bamboo:
+bash /opt/bamboo/atlassian-bamboo-9.6.0/bin/start-bamboo.sh
+
+ID: B1LR-ADDJ-J18I-M1QO
+Product: bamboo
+License type: Bamboo (Data Center)
+License email: your email@email.com
+Organizaion: my-org
+
+java -jar atlassian-agent-jar-with-dependencies.jar -d -m dan.rev2021@gmail.com -o my-org -p bamboo -s B1LR-ADDJ-J18I-M1QO
+
+
+==================================================================
+
+
+

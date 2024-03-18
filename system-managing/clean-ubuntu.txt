@@ -1,0 +1,9 @@
+Ubuntu Clean:
+
+sudo apt autoremove 
+
+du -h ~/.cache/thumbnails
+rm -rf ~/.cache/thumbnails/*
+
+du -h /var/cache/apt
+sudo apt-get clean

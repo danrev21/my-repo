@@ -1,0 +1,11 @@
+
+Priority variables:
+- playbook
+- roles
+- hosts
+- groups
+- default
+
+Roles as analog of function in programming.
+
+ansible_become 

@@ -1,0 +1,8 @@
+version: '3'
+services:
+  flask:
+    image: flask-app:latest
+    container_name: flask-app
+    restart: on-failure
+    ports:
+      - "5000:5000"

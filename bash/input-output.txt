@@ -1,0 +1,92 @@
+
+grep dan /etc/* > good.txt       # write only good and output bad
+grep dan /etc/* 2> nogood.txt   # write only bad and output good
+grep dan /etc/* > good.txt 2> nogood.txt   # write output to separate folders
+grep dan /etc/* &> all_outputs.txt
+# use >> to add output into file
+
+grep dan /etc/* 2> /dev/null  # output only good output
+
+sort file.txt >> file.txt   # if use > then delete file.txt
+
+можно передать содержимое файла в другой терминал:
+tty - узнаем имя терминал куда передать содержимое
+cat file > /dev/pts/1
+
+-------------------------------------------------------
+command << delimiter
+document
+delimiter
+
+  Здесь оболочка интерпретирует оператор << как инструкцию читать ввод, пока не найдет строку, содержащую указанный разделитель. Все входные строки до строки, содержащей разделитель, затем подаются на стандартный ввод команды.
+  Разделитель сообщает оболочке, что здесь документ завершен. Без него оболочка продолжает читать ввод бесконечно. Разделителем должно быть одно слово, не содержащее пробелов и знаков табуляции.
+-------------------------------------------------------
+  
+# Ниже приведен ввод команды wc -l для подсчета общего количества строк:
+wc -l << EOF
+1111111 
+2222222
+3333333
+EOF
+
+# в файл
+cat > Dockerfile << EOF
+FROM nginx
+EXPOSE 80
+RUN echo "<html><body>Student: Billy</body></html>" > /usr/share/nginx/html/index.html
+CMD nginx -g 'daemon off;'
+EOF
+
+-----------------------------------------------------
+# нужно будет выполнить команду, но вы не хотите, чтобы вывод отображался на экране:
+ls -jj 2> /dev/null 
+
+-----------------------------------------------------
+echo "This is a standard output" > stdout.txt
+echo "This is an error message" >&2 > stderr.txt
+
+------------------------------------
+echo "This is a standard output that will be silenced" > /dev/null
+echo "This is an error message that will be silenced" >&2 > /dev/null
+
+------------------------------------
+[ -f "data.txt" ] && echo "File data.txt found!"
+cp data.txt backup.txt 2> /dev/null
+[ -f "data.txt" ] || echo "File data.txt not found!"
+
+
+# if [ ! -f data.txt ]
+# then
+#     echo "File does not exist in Bash"
+# else
+#     echo "File data.txt found!"
+#     cp data.txt backup.txt 2> /dev/null
+# fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

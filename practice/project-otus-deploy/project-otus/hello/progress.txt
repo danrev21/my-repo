@@ -1,0 +1,539 @@
+## Deploy simple python app using different ways.
+APACHE
+CGI
+WSGI
+NGINX
+LXC
+ANSIBLE
+DOCKER
+DOCKER COMPOSE
+K8S
+
+vim app.py
+------------------------------------
+	#!/usr/bin/env python3
+
+	import datetime
+
+	def do_magic():
+ 	   now = datetime.datetime.now()
+ 	   return "Hello! {0}".format(now)
+
+	if __name__ == "__main__":
+ 	   print(do_magic())
+------------------------------------
+chmod +x app.py 
+./app.py
+sudo apt install git -y
+		git log
+		git status
+		git init
+		git status
+		git config --global user.email "dan.rev2021@gmail.com"
+		git config --global user.name "Dan Tyuev"
+		git add app.py
+		git commit -m 'first version'
+		git log
+		git log -p
+		git log --pretty=oneline
+sudo apt install apache2
+sudo systemctl status apache2.service
+sudo systemctl start apache2.service
+ip a  # go to browser to check apache work
+
+---use APACHE2 CGI----------------------------------------------------------------------
+
+cd /var/www/html
+mv html html2
+ln -s ~/volume/project/hello/ html
+sudo a2enmod cgi  # включ модуль cgi, отвеч-щий за выполн внешних скриптов
+sudo vim /etc/apache2/sites-enabled/000-default.conf
+-----------------------------------	
+DocumentRoot /var/www/html
+
+        <Directory /var/www/html  # в данной дире можно переопределять
+           AllowOverride All      # всё что угодно 
+        </Directory>
+-----------------------------------
+
+sudo systemctl start apache2.service
+cd ~/volume/project/hello/
+vim .htaccess # позволит переопределить настройки апач на лету
+----------------------------------
+AddHandler cgi-script .py   # если видишь файл с расш .ру то надо исполнить
+Options =ExecCGI            # разрешаю выполнение скриптов в этой директории
+DirectoryIndex app.py       # если сказали выполнить что-то иное то надо 
+		            # выбрать с индексом арр.ру  
+----------------------------------
+# получим в браузере Internal Server Error, поэтому:
+vim app.py
+---------------------------------
+	#!/usr/bin/env python3
+
+	import datetime
+
+	def do_magic():
+	    now = datetime.datetime.now()
+	    return "Hello! {0}".format(now)
+	
+	if __name__ == "__main__":
+->	    print("Content-type: text/html\n\n") # чтобы апач лучше понимал
+	    print(do_magic())
+--------------------------------
+# go to browser - ok
+# если выполнить ./app.py то: 
+Content-type: text/html
+
+
+Hello! 2022-07-05 16:37:50.844286
+# чтобы не было 1й строки:
+vim app.py
+--------------------------------
+	#!/usr/bin/env python3
+
+	import datetime
+->	import os         # модуль для просмотра пар-ров ОС
+
+	def do_magic():
+	    now = datetime.datetime.now()
+	    return "Hello! {0}".format(now)
+
+	if __name__ == "__main__":
+->	    if 'REQUEST_URI' in os.environ:         # если меня вызывают через апач,
+	       print("Content-type: text/html\n\n") # то добавляю Content-type: text/html
+	    print(do_magic())
+--------------------------------
+		git add app.py
+		git add .htaccess
+		git commit -m 'apache2 cgi version'
+		git status 
+		git tag v1.0              # add tag (it use for important commits)
+		git log
+		git checkout c4136291dd8  # return to prevuos version app.py
+		vim app.py
+		git checkout v1.0         # move to file with tag 'v1.0'
+		vim app.py
+		git checkout main       # move to last version (now it is v1.0)
+		vim app.py
+		git tag
+	
+	
+---for python better use WSGI (whiskey)-------------------------------------------------------------------
+# Web Server Gateway Interface  used to forward requests from a web server (such as Apache or NGINX) to a 
+# backend Python web application or framework.	
+# as soft implementation we can use daemon uWSGI
+
+		git checkout -b uwsgi
+-------------------------------------
+	#!/usr/bin/env python3
+
+	import datetime
+	import os
+
+	def do_magic():
+	    now = datetime.datetime.now()
+	    return "Hello! {0}".format(now)
+	    
+->	def application(env, start_response):
+->	    start_response('200 OK', [('Content-Type', 'text/html')])
+->	    return [do_magic()]
+	
+	if __name__ == "__main__":
+	    print("Content-type: text/html\n\n") # чтобы апач лучше понимал
+	    print(do_magic())
+-------------------------------------
+		git add app.py
+		git commit -m 'wsgi version'	    
+sudo apt install uwsgi-plugin-python3  # install wsgi daemon plugin
+# run daemon wsgi which load plugin for python, run web-server on port 9090,
+# and use app.py as start file
+uwsgi --plugin python3 --http-socket :9090 --wsgi-file app.py
+# we get clear display, it was intentional error:) and we do change:
+	#!/usr/bin/env python3
+
+	import datetime
+	import os
+
+	def do_magic():
+	    now = datetime.datetime.now()
+	    return "Hello! {0}".format(now)
+	    
+	def application(env, start_response):
+	    start_response('200 OK', [('Content-Type', 'text/html')])
+	    return [do_magic()]
+	
+	if __name__ == "__main__":
+	    print("Content-type: text/html\n\n") # чтобы апач лучше понимал
+->          return[do_magic().encode()]
+
+uwsgi --plugin python3 --http-socket :9090 --wsgi-file app.py  # and we get 'Hello! 2022-...'
+# it's the long command, that's why:
+vim dev.ini
+----------------
+	[uwsgi]
+	plugin=python3
+	http-socket=:9090
+	wsgi-file=app.py
+---------------
+uwsgi dev.ini   # and we get 'Hello! 2022-...'
+		git add app.py
+		git add dev.ini
+		git commit -m 'uwsgi version'
+		git checkout main
+		git checkout branch
+		git merge uwsgi
+		git log
+		git log -p
+
+
+===================================================================
+---use NGINX web server--------------------------------------------
+# nginx doesn't support cgi that's why we use uwsgi to perform app.py
+# we will deploy in prod
+
+sudo apt install nginx
+sudo vim /etc/nginx/conf.d/hello.conf
+---------------------------------
+server {
+    listen       80;
+    root /var/www/html;
+
+    location / {
+        include /etc/nginx/uwsgi_params;
+        uwsgi_pass 127.0.0.1:9000;
+        uwsgi_param Host $host;
+        uwsgi_param X-Real-IP $remote_addr;
+        uwsgi_param X-Forwarded-For $proxy_add_x_forwarded_for;
+        uwsgi_param X-Forwarded-Proto $http_x_forwarded_proto;
+    }
+}
+----------------------------------
+# we need run wsgi and since we will in prod:
+cp dev.ini prod.ini
+vim prod.ini
+----------------------------------
+	[uwsgi]
+	plugin=python3
+->	socket=127.0.0.1:9000   # open socket 
+	wsgi-file=app.py
+----------------------------------
+uwsgi prod.ini   # go to browser (port 80)- ok
+# preparing to deploy:
+mkdir -p deploy/{apache2,uwsgi,nginx,systemd}
+mv .htaccess deploy/apache2/
+mv *.ini deploy/uwsgi/
+cp /etc/nginx/conf.d/hello.conf deploy/nginx/
+		git status
+		git add deploy
+		git commit -am 'prepare to deploy'
+		git status	
+		git remote add origin https://github.com/danrev21/uwsgi-apache2-nginx.git
+		git push origin main
+  		git status
+  		git log
+  		git log --pretty=oneline
+  		git push origin v1.0
+
+надо чтобы uwsgi запускался автоматически, сделаем это через systemd ubuntu:
+sudo vim /etc/systemd/system/hello.service
+------------------
+
+[Unit]
+Description=Hello app
+Requires=network.target    # network needed
+After=network.target	   
+
+[Service]
+TimeOutStartSec=0	   
+RestartSec=10
+Restart=always
+WorkingDirectory=/opt/uwsgi-apache2-nginx
+KillSignal=SIGQUIT
+Type=notify
+NotifyAccess=all
+ExecStart=/usr/bin/uwsgi deploy/uwsgi/prod.ini
+
+[Install]
+WantedBy=multi-user.target
+------------------
+
+т.е. в рабочей директории /opt/uwsgi-apache2-nginx запускается /usr/bin/uwsgi, и параметр в
+виде ini-файла лежит в deploy/uwsgi/prod.ini
+
+sudo systemctl daemon-reload
+cd /opt
+sudo su
+git clone https://github.com/danrev21/uwsgi-apache2-nginx.git
+sudo systemctl start hello
+sudo systemctl status hello
+# go to browser - Hello! 2022-07......
+cp /etc/systemd/system/hello.service deploy/systemd/
+
+	
+---итак к деплою готовы, необходимо чтобы было установлено:
+-python
+-uwsgi
+-nginx
+а так же наш код в гите в нужном виде.
+
+
+---DEPLOY USING LINUX CONTAINER---
+# LXD is an open source container management extension for Linux Containers (LXC).
+sudo apt install lxd
+sudo lxd init
+# logout login for normal work
+# and to enter in lxc container add ssh public key into lxc profile:
+sudo lxc profile edit default
+-----------------------------
+### This is a YAML representation of the profile.
+### Any line starting with a '# will be ignored.
+###
+### A profile consists of a set of configuration items followed by a set of
+### devices.
+###
+### An example would look like:
+### name: onenic
+### config:
+###   raw.lxc: lxc.aa_profile=unconfined
+### devices:
+###   eth0:
+###     nictype: bridged
+###     parent: lxdbr0
+###     type: nic
+###
+### Note that the name is shown but cannot be changed
+
+config: 
+  user.user-data: |
+    #cloud-config
+    ssh_authorized_keys:                                                           
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCuzZlAHxfrmU7CRPSHG7HzJyLi7xM4uAFY7k4Yy/hKf0Y9Jxip3P5Eyq+MfHa7aIbcCkJ+eJupS1uSgxvQtnkNSavtjzlVgYDcMKjoZKeZO4YZ3J>
+description: Default LXD profile
+devices:
+  eth0:
+    name: eth0
+    network: lxdbr0
+    type: nic
+  root:
+    path: /
+    pool: default
+    type: disk
+name: default
+used_by: []
+-----------------------------
+# run ubuntu container
+sudo lxc launch ubuntu:
+sudo lxc info <name instance>
+sudo lxc list  # to know ip-address container
+
+
+---DEPLOY USING ANSIBLE
+# install Ansible
+sudo apt update
+sudo apt install software-properties-common
+sudo add-apt-repository --yes --update ppa:ansible/ansible
+sudo apt install ansible
+
+mkdir ansible/
+cd ansible/
+vim ansible.cfg
+-----------------
+[defaults]
+host_key_checking = False
+inventory         = hosts
+-----------------
+vim hosts
+-------------------------
+test ansible_host=10.111.79.3 ansible_user=ubuntu
+-------------------------
+ansible -m ping test
+vim deploy.yml
+---------------------------------------------------------
+
+---
+- name: deploy hello app
+  gather_facts: false        
+  hosts: test
+  become: true
+
+  vars:
+    repo: https://github.com/danrev21/uwsgi-apache2-nginx
+    repo_dir: '/opt/uwsgi-apache2-nginx'
+    packages:
+      - nginx
+      - python3
+      - uwsgi-plugin-python3
+
+  tasks:
+  - name: update apt cache
+    apt:
+      update_cache: yes
+    
+  - name: install packages
+    package:
+      name: "{{ item }}"
+      state: latest
+    with_items: "{{ packages }}"
+    
+  - name: checkout repo
+    git:
+      repo: "{{ repo }}"
+      dest: "{{ repo_dir }}"
+      version: v2.0  
+    
+  - name: copy systemd config
+    copy:
+      remote_src: yes
+      src: "{{ repo_dir }}/deploy/systemd/hello.service"
+      dest: "/etc/systemd/system/hello.service"
+
+  - name: enable and start service
+    systemd:
+      name: hello
+      daemon_reload: yes
+      enabled: yes
+      state: started 
+
+  - name: copy nginx config
+    copy: 
+      remote_src: yes
+      src: "{{ repo_dir }}/deploy/nginx/hello.conf"
+      dest: "/etc/nginx/sites-available/hello.conf"
+      
+  - name: disable default nginx config
+    file:
+      state: absent
+      path: /etc/nginx/sites-enabled/default
+    notify: restart nginx
+    
+  - name: enable our nginx config
+    file:
+      src: /etc/nginx/sites-available/hello.conf 
+      dest: /etc/nginx/sites-enabled/hello.conf
+      state: link
+    notify: restart nginx
+    
+  handlers:
+  - name: restart nginx
+    systemd:
+      name: nginx
+      state: restarted  
+----------------------------------------------------      
+ansible-playbook deploy.yml
+wget -O- http://10.111.79.3 | less   or   curl http://10.111.79.3
+		git add ansible/
+		git commit -m 'ansible deploy'
+		git push origin main
+
+		
+---DEPLOY USING DOCKER---		      
+# install Docker through get-docker.sh
+sudo apt update
+sudo apt install curl
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo useradd -aG docker <username>
+# loginout --> login
+vim Dockerfile
+---------------------
+FROM tiangolo/uwsgi-nginx:python3.9
+
+COPY ./app.py /app/app.py
+COPY ./deploy/uwsgi/prod.ini /app/uwsgi.ini
+
+WORKDIR /app
+---------------------
+docker build -t dtyuev/uwsgi-nginx-hello:1.0 .
+
+# install docker-compose 
+https://docs.docker.com/compose/install/compose-plugin/#install-the-plugin-manually 
+		git add Dockerfile
+		git commit -m 'Dockerfile' 
+		git push origin main
+		git push origin v3.0
+sudo systemctl stop nginx
+docker container run  --publish 80:80 --detach dtyuev/uwsgi-nginx-hello:1.0		
+# go to browser --> Hello! 2022-07...
+docker login
+docker push dtyuev/uwsgi-nginx-hello:1.0	
+# we can run this container from any host mentioned command
+     
+---DEPLOY USING DOCKER-COMPOSE---      
+vim docker-compose.yml
+----------------------
+version: '3'
+      
+services:
+  hello:
+    image: dtyuev/uwsgi-nginx-hello:1.0
+    ports:
+      - "80:80"      
+    restart: always
+----------------------
+docker compose up
+# go to browser --> Hello! 2022-07...
+		git add docker-compose.yml
+		git commit -m 'docker compose'
+		git push origin main
+		git push origin v4.0
+		
+		
+---DEPLOY USING KUBERNETES---		
+# install minikube:
+https://minikube.sigs.k8s.io/docs/start/
+# install kubectl:
+https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/#install-using-native-package-management
+
+minikube start		    
+vim k8s.yml
+-----------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-service
+spec:
+  selector:
+    app: hello
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  type: LoadBalancer
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello
+spec:
+  selector:
+    matchLabels:
+      app: hello
+  replicas: 4
+  template:
+    metadata:
+      labels:
+        app: hello
+    spec:
+      containers:
+      - name: hello
+        image: dtyuev/uwsgi-nginx-hello:1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+
+-----------------------
+kubectl cluster-info         # IP-----
+kubectl apply -f k8s.yml              |
+kubectl get pods                      |
+kubectl describe pod                  |
+kubectl get svc              # port---|
+                                      |
+             wget -O- http://192.168.49.2:31685 | less 
+             curl 192.168.49.2:31685
+             
+		git add k8s.yml
+		git commit -m 'k8s'
+		git push origin main
+		
+		
