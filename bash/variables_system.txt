@@ -1,4 +1,15 @@
 =================================================
+# setup java variables:
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+export PATH=$PATH:$JAVA_HOME/bin
+echo $JAVA_HOME
+echo $PATH
+# another way:
+vim /etc/environment
+PATH="...:/usr/lib/jvm/java-17-openjdk-amd64/bin"  <-- add
+JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"     <-- add
+source /etc/environment
+
 # setup PATH for own script run from any directory
 
 env | grep PATH
