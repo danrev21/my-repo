@@ -1,7 +1,7 @@
 =========================================================
-### https://confluence.atlassian.com/bamboo/bamboo-documentation-289276551.html
+# https://confluence.atlassian.com/bamboo/bamboo-documentation-289276551.html
 
-### script to install postgresql and bamboo:
+1. INSTALL AND START
 
 sudo su
 apt update
@@ -14,12 +14,11 @@ apt-get -y install postgresql-16
 
 # install java (jdk, not jre!):
 apt install -y openjdk-17-jdk
-# set enviroment variables:
-cat << EOF >> .profile
 
-export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-export PATH=$PATH:$JAVA_HOME/bin
-EOF
+# set java variables:
+sed -i '1s/^/JAVA_HOME=\/usr\/lib\/jvm\/java-17-openjdk-amd64\n /' /etc/environment
+sed -n '/^PATH=/p' /etc/environment | sed -i 's/"$/:\$JAVA_HOME\/bin"/' /etc/environment
+source /etc/environment
 
 # Update the /etc/hosts file on the bamboo server:
 echo "192.168.0.102   agent" >> /etc/hosts
@@ -28,19 +27,18 @@ echo "192.168.0.102   agent" >> /etc/hosts
 useradd --create-home --home-dir /usr/local/bamboo -p $(perl -e 'print crypt($ARGV[0], "password")' pass123) --shell /bin/bash bamboo
 
 # Create bamboo install folder:
-mkdir -p /opt/bamboo-install && cd /opt/bamboo-install
+mkdir -p /opt/bamboo-install
 
 # Download Bamboo:
 # https://www.atlassian.com/software/bamboo/download-archives
-wget -c https://www.atlassian.com/software/bamboo/downloads/binary/atlassian-bamboo-9.6.0.tar.gz
-tar -zxf atlassian-bamboo-9.6.0.tar.gz
+wget -c https://www.atlassian.com/software/bamboo/downloads/binary/atlassian-bamboo-9.6.0.tar.gz -P /opt/bamboo-install
+tar -zxf atlassian-bamboo-9.6.0.tar.gz -C /opt/bamboo-install
 
 # Create bamboo home directory:
 mkdir -p /opt/bamboo-home
 echo "bamboo.home=/opt/bamboo-home/" >> /opt/bamboo-install/atlassian-bamboo-9.6.0/atlassian-bamboo/WEB-INF/classes/bamboo-init.properties
 
-cd /opt
-chown -R bamboo: bamboo-install/ bamboo-home/
+chown -R bamboo: /opt/bamboo-install/ /opt/bamboo-home/
 
 -----------------------------------------------------
 
@@ -52,7 +50,6 @@ sudo -s -H -u postgres
 /usr/lib/postgresql/16/bin/createdb -O bamboouser bamboo
 exit
 
------------------------------------------------------
 su bamboo
 # Start Bamboo: 
 bash /opt/bamboo-install/atlassian-bamboo-9.6.0/bin/start-bamboo.sh
@@ -62,7 +59,39 @@ bash /opt/bamboo-install/atlassian-bamboo-9.6.0/bin/stop-bamboo.sh
 
 # bamboo logs:
 cat /opt/bamboo-home/logs/atlassian-bamboo.log
+
 -----------------------------------------------------
+2. CRACK KEYGEN
+
+# if you need keygen, take it from https://github.com/haxqer/confluence/releases/
+# stop you bamboo if it started and:
+mkdir -p /opt/bamboo-keygen
+wget -c https://github.com/haxqer/confluence/releases/download/v1.3.3/atlassian-agent.jar -P /opt/bamboo-keygen
+
+# add this line in to setenv.sh:
+echo 'export JAVA_OPTS="-javaagent:/opt/bamboo-install/atlassian-agent.jar ${JAVA_OPTS}"' >> /opt/bamboo-install/atlassian-bamboo-9.6.0/bin/setenv.sh
+
+# get keygen license:
+# to get help:
+java -jar atlassian-agent.jar -h
+
+# from bamboo wrapper take ID(!) like this:
+ID: B1LR-ADDJ-J18I-M1QO
+
+# paste it as arguments and run the command:
+java -jar atlassian-agent-jar-with-dependencies.jar -d -m your_email -o my-org -p bamboo -s B1LR-ADDJ-J18I-M1QO
+
+# here:
+Product: bamboo
+License type: d - Bamboo (Data Center)
+License email: your_email
+Organizaion: my-org
+
+# start bamboo:
+bash /opt/bamboo-install/atlassian-bamboo-9.6.0/bin/start-bamboo.sh
+
+---------------------------------------------------------
+3. SYSTEMD BAMBOO SERVER
 
 # Running Bamboo as a Linux service:
 # https://confluence.atlassian.com/bamboo/running-bamboo-as-a-linux-service-416056046.html
@@ -71,7 +100,7 @@ cat /opt/bamboo-home/logs/atlassian-bamboo.log
 su bamboo
 bash /opt/bamboo-install/atlassian-bamboo-9.6.0/bin/stop-bamboo.sh
 
-sudo su
+# using root user:
 tee /etc/systemd/system/bamboo.service << EOF
 [Unit]
 Description=Atlassian Bamboo
@@ -95,6 +124,7 @@ systemctl start bamboo.service
 systemctl status bamboo.service
 
 -----------------------------------------------------
+4. AGENT INSTALL
 
 # setup remote agent:
 # install java (jdk, not jre!):
@@ -102,11 +132,9 @@ sudo su
 apt update && apt install -y openjdk-17-jdk
 
 # set enviroment variables:
-cat << EOF >> .profile
-
-export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-export PATH=$PATH:$JAVA_HOME/bin
-EOF
+sed -i '1s/^/JAVA_HOME=\/usr\/lib\/jvm\/java-17-openjdk-amd64\n /' /etc/environment
+sed -n '/^PATH=/p' /etc/environment | sed -i 's/"$/:\$JAVA_HOME\/bin"/' /etc/environment
+source /etc/environment
 
 # Update the  /etc/hosts  file on the bamboo agent:
 echo "192.168.0.101   bamboo" >> /etc/hosts
@@ -115,13 +143,14 @@ echo "192.168.0.101   bamboo" >> /etc/hosts
 useradd --create-home --home-dir /usr/local/bamboo -p $(perl -e 'print crypt($ARGV[0], "password")' pass123) --shell /bin/bash bamboo
 
 # create agent home folder:
-mkdir -p /opt/bamboo-agent-home && cd /opt/bamboo-agent-home
-chown bamboo: bamboo-agent-home 
+mkdir -p /opt/bamboo-agent-home-{1..5} 
+chown bamboo: /opt/bamboo-agent-home-{1..5}
 
 # go on the page to create agent and follow instructions
 # it should be like this:
 
-su bamboo       
+su bamboo
+cd /opt/bamboo-agent-home-1      
 wget -c http://192.168.0.101:8085/agentServer/agentInstaller/atlassian-bamboo-agent-installer-9.6.0.jar
 
 # to get help:
@@ -157,7 +186,11 @@ bash /opt/bamboo-agent-home/bin/bamboo-agent.sh stop
 # to start:
 bash /opt/bamboo-agent-home/bin/bamboo-agent.sh start
 
-# Installing the Bamboo Agent daemon with systemd:
+---------------------------------------------------
+5. SYSTEMD AGENT
+
+# Running Bamboo Agent as a Linux service:
+
 su bamboo
 bash /opt/bamboo-agent-home/bin/bamboo-agent.sh stop
 sudo su
@@ -166,37 +199,9 @@ systemctl enable bamboo-agent.service
 systemctl start bamboo-agent.service
 systemctl status bamboo-agent.service
 
----------------------------------------------------
- 
-# if you need keygen, take it from https://github.com/haxqer/confluence/releases/
-
-???cd /opt/bamboo-install/
-wget -c https://github.com/haxqer/confluence/releases/download/v1.3.3/atlassian-agent.jar
-vim /opt/bamboo-install/atlassian-bamboo-9.6.0/bin/setenv.sh
-# add this line:
-export JAVA_OPTS="-javaagent:/opt/bamboo-install/atlassian-agent.jar ${JAVA_OPTS}"
-
-# keygen license:
-# to get help:
-java -jar atlassian-agent.jar -h
-
-# from bamboo wrapper take information:
-ID: B1LR-ADDJ-J18I-M1QO
-Product: bamboo
-License type: Bamboo (Data Center)
-License email: your_email
-Organizaion: my-org
-
-# and paste it as arguments:
-java -jar atlassian-agent-jar-with-dependencies.jar -d -m your_email -o my-org -p bamboo -s B1LR-ADDJ-J18I-M1QO
-
-
-====================================================
-
-
-
 ===================================================
 ===================================================
+6. P.S.
 
 # another way export variables:
 vim /etc/environment
@@ -250,7 +255,7 @@ java -jar atlassian-agent-jar-with-dependencies.jar -d -m dan.rev2021@gmail.com 
 
 2. https://github.com/ipwnosx/Atlassian-Agent/blob/main/README.md
 
-# Compile jar:
+# Another way - compile jar:
 apt update
 apt install -y git
 apt install -y maven 
@@ -275,7 +280,6 @@ License email: your email@email.com
 Organizaion: my-org
 
 java -jar atlassian-agent-jar-with-dependencies.jar -d -m dan.rev2021@gmail.com -o my-org -p bamboo -s B1LR-ADDJ-J18I-M1QO
-
 
 ==================================================================
 
