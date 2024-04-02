@@ -69,7 +69,7 @@ mkdir -p /opt/bamboo-keygen
 wget -c https://github.com/haxqer/confluence/releases/download/v1.3.3/atlassian-agent.jar -P /opt/bamboo-keygen
 
 # add this line in to setenv.sh:
-echo 'export JAVA_OPTS="-javaagent:/opt/bamboo-install/atlassian-agent.jar ${JAVA_OPTS}"' >> /opt/bamboo-install/atlassian-bamboo-9.6.0/bin/setenv.sh
+echo 'export JAVA_OPTS="-javaagent:/opt/bamboo-keygen/atlassian-agent.jar ${JAVA_OPTS}"' >> /opt/bamboo-install/atlassian-bamboo-9.6.0/bin/setenv.sh
 
 # get keygen license:
 # to get help:
@@ -79,7 +79,7 @@ java -jar atlassian-agent.jar -h
 ID: B1LR-ADDJ-J18I-M1QO
 
 # paste it as arguments and run the command:
-java -jar atlassian-agent-jar-with-dependencies.jar -d -m your_email -o my-org -p bamboo -s B1LR-ADDJ-J18I-M1QO
+java -jar atlassian-agent.jar -d -m your_email -o my-org -p bamboo -s B1LR-ADDJ-J18I-M1QO
 
 # here:
 Product: bamboo
