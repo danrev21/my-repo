@@ -41,7 +41,9 @@ echo ZZtAuMJoA705 > ~/host_passw
 sshpass -f ~/host_passw ssh user@hostname
 
 ----------------------------------------------------------------
+# ssh tunnel:
 
+ssh -L 8085:localhost:8085 adminvm@86.57.194.22 -p 21022
 
 
 
