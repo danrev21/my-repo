@@ -18,14 +18,15 @@ services:
       REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
     volumes:
       - ./data:/data
+    restart: always 
       
-docker compose up      
-
 vim /etc/docker/daemon.json
 {
     "insecure-registries": ["<<IP or domain docker registry>:5000"]
 }
 systemctl restart docker
+
+docker compose up -d
 
 # check:
 curl http://<IP or domain docker registry>:5000/v2/_catalog

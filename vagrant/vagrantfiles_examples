@@ -5,6 +5,35 @@ VAGRANTFILE_API_VERSION = "2"
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.ssh.insert_key = false
   config.vm.provider :virtualbox do |vb|
+  config.vm.provision "shell", path: "swap-add-vagrant.sh"
+    vb.customize ["modifyvm", :id, "--memory", "4096"]
+    vb.customize ["modifyvm", :id, "--cpus", "3"]
+  end
+    
+  # Application server 1
+  config.vm.define "bitbucket1" do |bitbucket1|
+    bitbucket1.vm.hostname = "bitbucket1" 
+    bitbucket1.vm.box = "ubuntu/jammy64"
+    bitbucket1.vm.network :public_network, ip: "192.168.0.111", bridge: "wlo1" 
+  end
+
+  # Application server 2
+  config.vm.define "bitbucket2" do |bitbucket2|
+    bitbucket2.vm.hostname = "bitbucket2"
+    bitbucket2.vm.box = "ubuntu/jammy64"
+    bitbucket2.vm.network :public_network, ip: "192.168.0.112", bridge: "wlo1"
+  end
+end
+
+--------------------------------------------------------------------------------------------------------
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.ssh.insert_key = false
+  config.vm.provider :virtualbox do |vb|
     vb.customize ["modifyvm", :id, "--memory", "512"]
   end
 

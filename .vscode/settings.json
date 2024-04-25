@@ -1,0 +1,8 @@
+{
+    "terminal.integrated.fontFamily": "\"'DejaVu Sans Mono for Powerline'\"",
+    "terminal.integrated.letterSpacing": 0,
+    "terminal.integrated.cursorStyle": "line",
+    "terminal.integrated.cursorBlinking": false,
+    "editor.fontFamily": "\"'DejaVu Sans Mono for Powerline'\"",
+    "terminal.integrated.fontSize": 13
+}

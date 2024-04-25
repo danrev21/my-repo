@@ -1,3 +1,8 @@
+
+ sudo systemctl status systemd-networkd  
+ sudo systemctl status NetworkManager   
+ 
+ 
  # to know default gateway:
  ip route
  ip route show
@@ -61,4 +66,14 @@ network:
         via: 192.168.10.1
      nameservers:
        addresses: [192.168.10.1]
+       
+--------------------------------------------------------------------------
+
+# если не помогает с нетпланом:
+sudo vim /etc/NetworkManager/system-connections
+# находим необходимое соединение и редактируем адрес
+
+---------------------------------------------------------------------------   
+       
+      
 
