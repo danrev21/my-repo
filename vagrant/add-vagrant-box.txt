@@ -5,6 +5,8 @@
 
 vagrant box add ubuntu/focal64 file:///D:\vagrantVM\vagrant-data\ubuntu-focal-vagrantbox\focal-server-cloudimg-amd64-vagrant.box
 vagrant box add xenial-server file:///home/dan/Workdir/vagrant/ubuntu-xenial64-Vagrantbox/xenial-server-cloudimg-amd64-vagrant.box
+vagrant box add ubuntu/jammy64 /home/dan/Downloads/images/ubuntu-jammy64/jammy-server-cloudimg-amd64-vagrant.box
+
 
 vagrant box list
 vagrant init ubuntu/focal64
