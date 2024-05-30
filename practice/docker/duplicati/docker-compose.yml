@@ -5,14 +5,14 @@ services:
     image: lscr.io/linuxserver/duplicati:latest
     container_name: duplicati
     environment:
-      - PUID=0
-      - PGID=0
+      - PUID=0      # root user
+      - PGID=0      # root group
       - TZ=Etc/UTC
       - CLI_ARGS= #optional
     volumes:
-      - /mnt/volumes/config:/config
-      - /backups:/backups
-      - /:/source
+      - /path-to-config:/config
+      - /path-to-backups:/backups
+      - /path-to-source:/source                       
     ports:
       - 8200:8200
     restart: unless-stopped
