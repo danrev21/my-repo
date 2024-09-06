@@ -1,0 +1,43 @@
+https://itdog.info/ustanovka-i-nastrojka-wireguard-klientov-na-android-iphone-windows-linux/#linux
+
+
+Linux
+Для запуска Wireguard в Linux есть два три стула:
+
+Консоль
+Плагин для Network-Manager
+Systemd-networkd
+Wireguard поддерживается в Netwrok-Manager из коробки. Только проблема в том, что настраивать и управлять им можно только через nmcli. Для того, что бы иметь toggle в GUI Network-Manager, необходимо ставить плагин, как и для OpenVPN. Пакета с плагином нет в PPA, его нужно собирать из исходников .
+
+В Linux wg-quick использует openresolv для управления DNS и не поддерживает systemd-resolved, который используется почти везде. И при поднятии интерфейса выводится ошибка
+
+line 32: resolvconf: command not found
+Поэтому в Linux строку DNS нужно будет выпилить. В этом случае будет использоваться DNS системы, т.е. например, DNS сервер на вашем домашнем роутере.
+
+Но если ваш провайдер подменяет DNS запросы, то имеет смысл пустить DNS трафик через туннель.
+
+Для этого нужно оставить строку DNS и сделать симлинк
+
+sudo ln -s /usr/bin/resolvectl /usr/local/bin/resolvconf
+Пока разберём только консольный вариант для Ubuntu 20.04. Для всех остальных линуксов настройка особо не отличается. Команды для установки можно найти на официальной странице .
+
+Ставим Wireguard
+sudo apt install wireguard
+Копируем конфиг в директорию /etc/wireguard/. Нужно sudo
+sudo cp test.conf /etc/wireguard/
+Используем wg-quick для поднятия и закрытия туннеля. Так же везде необходимо sudo, т. к. это создание интерфейса.
+Имя конфигурации для wg-quick точно такое же, как имя файла конфига. Поднимаем
+
+sudo wg-quick up test
+Проверяем состояние туннеля
+
+sudo wg show
+wg-linux-1
+
+Проверяем IP адрес и страну
+
+curl ifconfig.co
+curl ifconfig.co/country
+Закрываем туннель
+
+sudo wg-quick down test

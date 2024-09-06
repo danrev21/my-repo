@@ -2,9 +2,8 @@
 
 sudo su
 
-mkdir /opt/docker-registry
+mkdir -p /opt/docker-registry/data
 cd /opt/docker-registry
-mkdir data
 vim docker-compose.yml
 
 version: '3'
@@ -49,10 +48,15 @@ vim /etc/docker/daemon.json
 systemctl restart docker
 docker pull <IP or domain docker registry>:5000/alpine:1.0
 
+# место реп:
+/opt/docker-registry/data/docker/registry/v2/repositories
 
 
 
 
+{
+    "insecure-registries": ["192.168.11.20:80"]
+}
 
 
 

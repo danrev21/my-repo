@@ -3,14 +3,23 @@
 
 1. INSTALL AND START
 
+timedatectl set-timezone Europe/Minsk
+
+# choose root:
 sudo su
 apt update
 
-# install postgre:
+# install postgre on Ubuntu:
 sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 apt-get update
 apt-get -y install postgresql-16
+
+# install postgre on Debian:
+apt install -y postgresql-common
+/usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+apt update
+apt -y install postgresql-16
 
 # install java (jdk, not jre!):
 apt install -y openjdk-17-jdk
@@ -19,6 +28,8 @@ apt install -y openjdk-17-jdk
 sed -i '1s/^/JAVA_HOME=\/usr\/lib\/jvm\/java-17-openjdk-amd64\n /' /etc/environment
 sed -n '/^PATH=/p' /etc/environment | sed -i 's/"$/:\$JAVA_HOME\/bin"/' /etc/environment
 source /etc/environment
+# PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin"
+# JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 
 # Update the /etc/hosts file on the bamboo server:
 echo "192.168.0.102   agent" >> /etc/hosts
@@ -32,22 +43,23 @@ mkdir -p /opt/bamboo-install
 # Download Bamboo:
 # https://www.atlassian.com/software/bamboo/download-archives
 wget -c https://www.atlassian.com/software/bamboo/downloads/binary/atlassian-bamboo-9.6.0.tar.gz -P /opt/bamboo-install
-tar -zxf atlassian-bamboo-9.6.0.tar.gz -C /opt/bamboo-install
+tar -zxf /opt/bamboo-install/atlassian-bamboo-9.6.0.tar.gz -C /opt/bamboo-install
 
 # Create bamboo home directory:
 mkdir -p /opt/bamboo-home
-echo "bamboo.home=/opt/bamboo-home/" >> /opt/bamboo-install/atlassian-bamboo-9.6.0/atlassian-bamboo/WEB-INF/classes/bamboo-init.properties
+echo "bamboo.home=/opt/bamboo-home" >> /opt/bamboo-install/atlassian-bamboo-9.6.0/atlassian-bamboo/WEB-INF/classes/bamboo-init.properties
 
 chown -R bamboo: /opt/bamboo-install/ /opt/bamboo-home/
 
 -----------------------------------------------------
+# далее для дебиан возможно понадобиться установка судо: apt install sudo -y
 
 # Creating a Bamboo database:
 sudo -s -H -u postgres
 # Create the Bamboo user:
 /usr/lib/postgresql/16/bin/createuser -S -d -r -P -E bamboouser
 # Create the bamboo database:
-/usr/lib/postgresql/16/bin/createdb -O bamboouser bamboo
+/usr/lib/postgresql/16/bin/createdb -O bamboouser bamboodb
 exit
 
 su bamboo
@@ -63,10 +75,11 @@ cat /opt/bamboo-home/logs/atlassian-bamboo.log
 -----------------------------------------------------
 2. CRACK KEYGEN
 
+# bamboo user is ON
 # if you need keygen, take it from https://github.com/haxqer/confluence/releases/
 # stop you bamboo if it started and:
-mkdir -p /opt/bamboo-keygen
-wget -c https://github.com/haxqer/confluence/releases/download/v1.3.3/atlassian-agent.jar -P /opt/bamboo-keygen
+cd /opt/bamboo-install/
+wget -c https://github.com/haxqer/confluence/releases/download/v1.3.3/atlassian-agent.jar
 
 # add this line in to setenv.sh:
 echo 'export JAVA_OPTS="-javaagent:/opt/bamboo-install/atlassian-agent.jar ${JAVA_OPTS}"' >> /opt/bamboo-install/atlassian-bamboo-9.6.0/bin/setenv.sh
@@ -79,7 +92,7 @@ java -jar atlassian-agent.jar -h
 ID: B1LR-ADDJ-J18I-M1QO
 
 # paste it as arguments and run the command:
-java -jar atlassian-agent-jar-with-dependencies.jar -d -m your_email -o my-org -p bamboo -s B1LR-ADDJ-J18I-M1QO
+java -jar atlassian-agent.jar -d -m your_email -o my-org -p bamboo -s B1LR-ADDJ-J18I-M1QO
 
 # here:
 Product: bamboo
@@ -87,7 +100,7 @@ License type: d - Bamboo (Data Center)
 License email: your_email
 Organizaion: my-org
 
-# start bamboo:
+# start bamboo and paste license:
 bash /opt/bamboo-install/atlassian-bamboo-9.6.0/bin/start-bamboo.sh
 
 ---------------------------------------------------------
@@ -135,20 +148,24 @@ apt update && apt install -y openjdk-17-jdk
 sed -i '1s/^/JAVA_HOME=\/usr\/lib\/jvm\/java-17-openjdk-amd64\n /' /etc/environment
 sed -n '/^PATH=/p' /etc/environment | sed -i 's/"$/:\$JAVA_HOME\/bin"/' /etc/environment
 source /etc/environment
+# PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin"
+# JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 
-# Update the  /etc/hosts  file on the bamboo agent:
+# Update the  /etc/hosts  file on the agent:
 echo "192.168.0.101   bamboo" >> /etc/hosts
 
 # Create a dedicated user to run Bamboo:
 useradd --create-home --home-dir /usr/local/bamboo -p $(perl -e 'print crypt($ARGV[0], "password")' pass123) --shell /bin/bash bamboo
 
-# create agent home fold
+# create agent home folder:
+mkdir -p /opt/bamboo-agent-home
+chown -R bamboo: /opt/bamboo-agent-home
 
 # go on the page to create agent and follow instructions
 # it should be like this:
 
 su bamboo
-cd /opt/bamboo-agent-home-1      
+cd /opt/bamboo-agent-home   
 wget -c http://192.168.0.101:8085/agentServer/agentInstaller/atlassian-bamboo-agent-installer-9.6.0.jar
 
 # to get help:
@@ -175,7 +192,7 @@ Security token (if needed) can be obtained from your Bamboo instance under the f
     <bamboo-base-url>/admin/agent/addRemoteAgent.action
     
 # to first run agent:    
-java -Dbamboo.home=/opt/bamboo-agent-home -jar atlassian-bamboo-agent-installer-9.6.0.jar http://192.168.0.101:8085/agentServer/
+java -Dbamboo.home=/opt/bamboo-agent-home -jar atlassian-bamboo-agent-installer-9.6.0.jar http://192.168.11.2:8085/agentServer/
 
 # check:
 bash /opt/bamboo-agent-home/bin/bamboo-agent.sh status
@@ -184,8 +201,21 @@ bash /opt/bamboo-agent-home/bin/bamboo-agent.sh stop
 # to start:
 bash /opt/bamboo-agent-home/bin/bamboo-agent.sh start
 
+# agent logs:
+tail -100 /opt/bamboo-agent-home/atlassian-bamboo-agent.log
+
+# агент может не установить соединение т.к. надо указать правильный адрес bamboo, 
+# поэтому на сервере bamboo во вкладке "General configuration":
+Broker client URL
+failover:(tcp://<your_bamboo>:54663.......
+
+# если надо поменять имя агента: 
+vim /opt/bamboo-agent-home/bamboo-agent.cfg.xml (d /etc/hosts тоже)
+
 ---------------------------------------------------
 5. SYSTEMD AGENT
+
+# https://confluence.atlassian.com/bamboo/running-bamboo-as-a-linux-service-416056046.html
 
 # Running Bamboo Agent as a Linux service:
 
@@ -280,6 +310,80 @@ Organizaion: my-org
 java -jar atlassian-agent-jar-with-dependencies.jar -d -m dan.rev2021@gmail.com -o my-org -p bamboo -s B1LR-ADDJ-J18I-M1QO
 
 ==================================================================
+
+
+
+==================================================================
+
+Shared system directories
+Depending on where your instance is located, you may want to configure the system directories. Additionally, if you have multiple users accessing Bamboo, you may want to have these directories located on a shared server.
+Shared home path/opt/bamboo-home/shared
+Configuration directory(required)
+/opt/bamboo-home/shared/configuration
+This is where your settings for Bamboo are stored.
+Build data directory(required)
+/opt/bamboo-home/shared/builds
+This is where Bamboo saves the build data such as results and artifacts.
+Artifacts directory(required)
+/opt/bamboo-home/shared/artifacts
+This is where Bamboo stores build artifacts.
+Repository logs directory(required)
+/opt/bamboo-home/shared/repository-specs
+This is where logs for Bamboo Specs executions are stored.
+
+Local build directory
+The local build directory allows you to checkout source code to a specific location on your computer.
+Local home path/opt/bamboo-home
+Build working directory(required)
+/opt/bamboo-home/local-working-dir
+This is where Bamboo temporarily puts checked-out files used for building.
+
+---
+
+Configure how Bamboo will connect to your database
+Connection type
+Connect using JDBC
+Connect using a datasource (configured externally in an application server)
+
+Driver class name
+org.postgresql.Driver
+The class name of the database driver. This class must be in your classpath.
+Database URL
+jdbc:postgresql://localhost:5432/bamboodb
+The URL to access the database.
+User name
+bamboouser
+The username to access the database.
+Password
+••••••••
+Enter the password if the database configuration requires it.
+
+---
+
+Create admin
+Enter the details of the administrator user for this installation of Bamboo.
+
+Username(required)
+bamboo
+Password(required)
+••••••••
+Confirm password(required)
+••••••••
+Full name(required)
+DV
+Email(required)
+mail@mail.com
+
+-=--
+
+Bamboo JMS broker configuration
+Broker URL
+tcp://0.0.0.0:54663?wireFormat.maxInactivityDuration=90000&transport.soWriteTimeout=45000
+The IP address and port the broker uses to listen for connections. Requires a restart.
+Broker client URL
+failover:(tcp://bamboo.local.by:54663?socket.verifyHostName=false&wireFormat.maxInactivityDuration=90000)?initialReconnectDelay=15000&maxReconnectAttempts=10
+
+
 
 
 

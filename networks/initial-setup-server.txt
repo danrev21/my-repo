@@ -5,6 +5,8 @@
 sudo apt update
 sudo apt upgrade -y
 
+timedatectl set-timezone Europe/Minsk
+
 sudo apt install -y fail2ban vim net-tools tree ncdu bash-completion curl dnsutils htop iftop pwgen screen sudo wget
 
 # setup fail2ban - https://denshub.com/ru/fail2ban-server-protection/
