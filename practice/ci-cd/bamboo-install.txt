@@ -140,33 +140,46 @@ systemctl status bamboo.service
 4. AGENT INSTALL
 
 # setup remote agent:
-# install java (jdk, not jre!):
+
+### install java (jdk, not jre!):
 sudo su
 apt update && apt install -y openjdk-17-jdk
 
-# set enviroment variables:
+### set enviroment variables:
 sed -i '1s/^/JAVA_HOME=\/usr\/lib\/jvm\/java-17-openjdk-amd64\n /' /etc/environment
 sed -n '/^PATH=/p' /etc/environment | sed -i 's/"$/:\$JAVA_HOME\/bin"/' /etc/environment
 source /etc/environment
 # PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin"
 # JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 
-# Update the  /etc/hosts  file on the agent:
-echo "192.168.0.101   bamboo" >> /etc/hosts
+### Update the  /etc/hosts  file on the agent:
 
-# Create a dedicated user to run Bamboo:
+# without a system restart:
+hostname bamboo-agent2
+vim /etc/hostname
+
+cat << EOF > /etc/hostname
+bamboo-agent<num>
+EOF
+
+cat << FOE >> /etc/hosts
+192.168.11.2   bamboo
+127.0.1.1      bamboo-agent<num>
+FOE
+
+### Create a dedicated user to run Bamboo:
 useradd --create-home --home-dir /usr/local/bamboo -p $(perl -e 'print crypt($ARGV[0], "password")' pass123) --shell /bin/bash bamboo
 
-# create agent home folder:
+### Create agent home folder:
 mkdir -p /opt/bamboo-agent-home
 chown -R bamboo: /opt/bamboo-agent-home
 
-# go on the page to create agent and follow instructions
-# it should be like this:
+### To download agent go on the browser bamboo page to create agent 
+# and follow instructions. It should be like this:
 
 su bamboo
 cd /opt/bamboo-agent-home   
-wget -c http://192.168.0.101:8085/agentServer/agentInstaller/atlassian-bamboo-agent-installer-9.6.0.jar
+wget -c http://<bamboo IP>:8085/agentServer/agentInstaller/atlassian-bamboo-agent-installer-9.6.0.jar
 
 # to get help:
 java -jar atlassian-bamboo-agent-installer-9.6.0.jar
@@ -192,7 +205,7 @@ Security token (if needed) can be obtained from your Bamboo instance under the f
     <bamboo-base-url>/admin/agent/addRemoteAgent.action
     
 # to first run agent:    
-java -Dbamboo.home=/opt/bamboo-agent-home -jar atlassian-bamboo-agent-installer-9.6.0.jar http://192.168.11.2:8085/agentServer/
+java -Dbamboo.home=/opt/bamboo-agent-home -jar atlassian-bamboo-agent-installer-9.6.0.jar http://<bamboo IP>:8085/agentServer/
 
 # check:
 bash /opt/bamboo-agent-home/bin/bamboo-agent.sh status
@@ -228,6 +241,21 @@ systemctl start bamboo-agent.service
 systemctl status bamboo-agent.service
 
 ===================================================
+
+# Желательно создать скрипт очистки оперативной памяти каждую ночь:
+ 
+vim /usr/local/bin/clearcache.sh
+--- 
+#!/bin/bash
+sync ; echo 1 > /proc/sys/vm/drop_caches
+---
+ 
+chmod 755 /usr/local/bin/clearcache.sh
+crontab -e
+
+0 2 * * * /usr/local/bin/clearcache.sh
+
+
 ===================================================
 6. P.S.
 
