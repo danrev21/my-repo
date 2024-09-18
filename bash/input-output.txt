@@ -13,6 +13,16 @@ sort file.txt >> file.txt   # if use > then delete file.txt
 tty - узнаем имя терминал куда передать содержимое
 cat file > /dev/pts/1
 
+-----
+
+#!/bin/bash
+echo "This is a standard output" > stdout.txt
+echo "This is an error message" >&2 > stderr.txt
+------------------------------------
+#!/usr/bin/env bash
+echo "This is a standard output that will be silenced" > /dev/null
+echo "This is an error message that will be silenced" >&2 > /dev/null
+
 -------------------------------------------------------
 command << delimiter
 document

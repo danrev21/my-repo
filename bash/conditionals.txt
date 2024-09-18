@@ -16,6 +16,17 @@ if [[ $a -eq $b ]]; then echo "conditional is right"; fi
 if [[ $a == $b ]]; then echo "conditional is right"; fi
 if [ "asd" \> "zxcv" ]; then echo "conditional is right"; else echo "not right"; fi
 
+[ -f "data.txt" ] && echo "File data.txt found!"
+cp data.txt backup.txt 2> /dev/null
+[ -f "data.txt" ] || echo "File data.txt not found!"
+
+# if [ ! -f data.txt ]
+# then
+#     echo "File does not exist in Bash"
+# else
+#     echo "File data.txt found!"
+#     cp data.txt backup.txt 2> /dev/null
+# fi
 ---------------------------------------------------
 WEEKOFFSET=$[ $(date +"%V") % 2 ]
 # Test if we have a remainder.  If not, this is an even week so send a message.
