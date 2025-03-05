@@ -9,7 +9,7 @@ Obtain SSL Certificate
 Modify Web Server Configuration
 Complete Install via Web Interface
 
-mkdir wordpress && cd wordpress
+mkdir wordpress && cd wordpress && mkdir nginx-conf
 vim nginx-conf/nginx.conf
 
 server {
@@ -58,8 +58,18 @@ server {
 }
 
 vim .env 
+MYSQL_ROOT_PASSWORD=your_root_password
+MYSQL_USER=your_wordpress_database_user
+MYSQL_PASSWORD=your_wordpress_database_password
+
 vim .dockerignore
+.env
+
 vim .gitignore
+.env
+.git
+docker-compose.yml
+.dockerignore
 
 vim docker-compose.yml
 

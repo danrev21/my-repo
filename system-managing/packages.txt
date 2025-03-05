@@ -6,6 +6,7 @@
   319  sudo dpkg -P firefox
   
   320  sudo apt install firefox
+  
   # Search for a given package:
   321  sudo apt search chromium-browser
   322  sudo apt install -y chromium-browser

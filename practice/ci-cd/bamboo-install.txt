@@ -25,17 +25,13 @@ apt -y install postgresql-16
 apt install -y openjdk-17-jdk
 
 # set java variables:
-sed -i '1s/^/JAVA_HOME=\/usr\/lib\/jvm\/java-17-openjdk-amd64\n /' /etc/environment
-sed -n '/^PATH=/p' /etc/environment | sed -i 's/"$/:\$JAVA_HOME\/bin"/' /etc/environment
+vim /etc/environment
+PATH="$PATH:/usr/lib/jvm/java-17-openjdk-amd64/bin"
+JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 source /etc/environment
-# PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin"
-# JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
-
-# Update the /etc/hosts file on the bamboo server:
-echo "192.168.0.102   agent" >> /etc/hosts
 
 # Create a dedicated user to run Bamboo:
-useradd --create-home --home-dir /usr/local/bamboo -p $(perl -e 'print crypt($ARGV[0], "password")' pass123) --shell /bin/bash bamboo
+useradd --create-home --home-dir /usr/local/bamboo -p $(perl -e 'print crypt($ARGV[0], "password")' your-password) --shell /bin/bash bamboo
 
 # Create bamboo install folder:
 mkdir -p /opt/bamboo-install
@@ -52,7 +48,7 @@ echo "bamboo.home=/opt/bamboo-home" >> /opt/bamboo-install/atlassian-bamboo-9.6.
 chown -R bamboo: /opt/bamboo-install/ /opt/bamboo-home/
 
 -----------------------------------------------------
-# далее для дебиан возможно понадобиться установка судо: apt install sudo -y
+# далее для дебиан установка судо: apt install sudo -y
 
 # Creating a Bamboo database:
 sudo -s -H -u postgres
@@ -146,25 +142,23 @@ sudo su
 apt update && apt install -y openjdk-17-jdk
 
 ### set enviroment variables:
-sed -i '1s/^/JAVA_HOME=\/usr\/lib\/jvm\/java-17-openjdk-amd64\n /' /etc/environment
-sed -n '/^PATH=/p' /etc/environment | sed -i 's/"$/:\$JAVA_HOME\/bin"/' /etc/environment
+vim /etc/environment
+PATH="$PATH:/usr/lib/jvm/java-17-openjdk-amd64/bin"
+JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 source /etc/environment
-# PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin"
-# JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 
 ### Update the  /etc/hosts  file on the agent:
 
 # without a system restart:
 hostname bamboo-agent2
-vim /etc/hostname
 
 cat << EOF > /etc/hostname
-bamboo-agent<num>
+bamboo-agent<number your agent>
 EOF
 
 cat << FOE >> /etc/hosts
 192.168.11.2   bamboo
-127.0.1.1      bamboo-agent<num>
+127.0.1.1      bamboo-agent<number your agent>
 FOE
 
 ### Create a dedicated user to run Bamboo:
@@ -242,7 +236,7 @@ systemctl status bamboo-agent.service
 
 ===================================================
 
-# Желательно создать скрипт очистки оперативной памяти каждую ночь:
+# создать скрипт очистки оперативной памяти bamboo-agent каждую ночь:
  
 vim /usr/local/bin/clearcache.sh
 --- 
@@ -260,10 +254,11 @@ crontab -e
 6. P.S.
 
 # another way export variables:
-vim /etc/environment
-PATH="...:/usr/lib/jvm/java-17-openjdk-amd64/bin"
-JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+sed -i '1s/^/JAVA_HOME=\/usr\/lib\/jvm\/java-17-openjdk-amd64\n /' /etc/environment
+sed -n '/^PATH=/p' /etc/environment | sed -i 's/"$/:\$JAVA_HOME\/bin"/' /etc/environment
 source /etc/environment
+# PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin"
+# JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 
 # Logs:
 cat /opt/bamboo/atlassian-bamboo-9.6.0/logs/catalina.out
@@ -282,7 +277,7 @@ vim atlassian-bamboo-9.6.0/bin/setenv.sh
 
 ==============================================================
 ==============================================================
-BAMBOO KEYGEN
+ANOTHER BAMBOO KEYGEN
 
 ==============================================================
 1. https://github.com/haxqer/confluence/releases/
@@ -338,79 +333,6 @@ Organizaion: my-org
 java -jar atlassian-agent-jar-with-dependencies.jar -d -m dan.rev2021@gmail.com -o my-org -p bamboo -s B1LR-ADDJ-J18I-M1QO
 
 ==================================================================
-
-
-
-==================================================================
-
-Shared system directories
-Depending on where your instance is located, you may want to configure the system directories. Additionally, if you have multiple users accessing Bamboo, you may want to have these directories located on a shared server.
-Shared home path/opt/bamboo-home/shared
-Configuration directory(required)
-/opt/bamboo-home/shared/configuration
-This is where your settings for Bamboo are stored.
-Build data directory(required)
-/opt/bamboo-home/shared/builds
-This is where Bamboo saves the build data such as results and artifacts.
-Artifacts directory(required)
-/opt/bamboo-home/shared/artifacts
-This is where Bamboo stores build artifacts.
-Repository logs directory(required)
-/opt/bamboo-home/shared/repository-specs
-This is where logs for Bamboo Specs executions are stored.
-
-Local build directory
-The local build directory allows you to checkout source code to a specific location on your computer.
-Local home path/opt/bamboo-home
-Build working directory(required)
-/opt/bamboo-home/local-working-dir
-This is where Bamboo temporarily puts checked-out files used for building.
-
----
-
-Configure how Bamboo will connect to your database
-Connection type
-Connect using JDBC
-Connect using a datasource (configured externally in an application server)
-
-Driver class name
-org.postgresql.Driver
-The class name of the database driver. This class must be in your classpath.
-Database URL
-jdbc:postgresql://localhost:5432/bamboodb
-The URL to access the database.
-User name
-bamboouser
-The username to access the database.
-Password
-••••••••
-Enter the password if the database configuration requires it.
-
----
-
-Create admin
-Enter the details of the administrator user for this installation of Bamboo.
-
-Username(required)
-bamboo
-Password(required)
-••••••••
-Confirm password(required)
-••••••••
-Full name(required)
-DV
-Email(required)
-mail@mail.com
-
--=--
-
-Bamboo JMS broker configuration
-Broker URL
-tcp://0.0.0.0:54663?wireFormat.maxInactivityDuration=90000&transport.soWriteTimeout=45000
-The IP address and port the broker uses to listen for connections. Requires a restart.
-Broker client URL
-failover:(tcp://bamboo.local.by:54663?socket.verifyHostName=false&wireFormat.maxInactivityDuration=90000)?initialReconnectDelay=15000&maxReconnectAttempts=10
-
 
 
 

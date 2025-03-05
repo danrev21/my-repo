@@ -28,12 +28,11 @@ exit
 # install java (jdk, not jre!):
 apt install -y openjdk-17-jdk
 
-# set JAVA_HOME variable:
-sed -i '1s/^/JAVA_HOME=\/usr\/lib\/jvm\/java-17-openjdk-amd64\n /' /etc/environment
-sed -n '/^PATH=/p' /etc/environment | sed -i 's/"$/:\$JAVA_HOME\/bin"/' /etc/environment
+# set java variables:
+vim /etc/environment
+PATH="$PATH:/usr/lib/jvm/java-17-openjdk-amd64/bin"
+JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 source /etc/environment
-# PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin"
-# JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 
 # create bitbucket user:
 useradd --create-home --home-dir /usr/local/bitbucket -p $(perl -e 'print crypt($ARGV[0], "password")' 09051945) --shell /bin/bash atlbitbucket
