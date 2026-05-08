@@ -20,4 +20,5 @@ https://itnots.ru/linux/sudoers-pravila-vyborochno-razreshit-vypolnenie-komand-p
 
 https://itnots.ru/linux/sudoers-pravila-vyborochno-razreshit-vypolnenie-komand-polzovatelyam-bez-root/
 -----------------------------------------------
-
+# выполнение команды без пароля:
+user ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nginx
